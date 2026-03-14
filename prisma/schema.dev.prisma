@@ -1,0 +1,118 @@
+// Development Schema for SQLite (local development only)
+// This file is used for local development with SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Admin user for portal access
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Menu categories
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  icon      String?
+  order     Int        @default(0)
+  active    Boolean    @default(true)
+  menuItems MenuItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// Menu items
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  price       Float
+  image       String?
+  isVeg       Boolean  @default(true)
+  isPopular   Boolean  @default(false)
+  isAvailable Boolean  @default(true)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Gallery images
+model GalleryImage {
+  id          String   @id @default(cuid())
+  title       String?
+  description String?
+  image       String
+  category    String?
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Customers (linked to Clerk auth)
+model Customer {
+  id           String        @id @default(cuid())
+  clerkId      String        @unique
+  email        String?
+  name         String?
+  imageUrl     String?
+  testimonials Testimonial[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// Testimonials/Reviews
+model Testimonial {
+  id         String    @id @default(cuid())
+  name       String
+  rating     Int       @default(5)
+  comment    String
+  source     String?
+  active     Boolean   @default(true)
+  order      Int       @default(0)
+  clerkId    String?
+  customer   Customer? @relation(fields: [clerkId], references: [clerkId], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+// Site settings
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Branches
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  landmark  String?
+  phone     String?
+  openTime  String
+  closeTime String
+  daysOpen  String
+  isMain    Boolean  @default(false)
+  mapEmbed  String?
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
