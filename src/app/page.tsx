@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Star, MapPin, Clock, Phone, Instagram, ExternalLink, 
@@ -167,13 +167,23 @@ export default function HomePage() {
     }
   }, [isSignedIn, user]);
 
-  const filteredMenuItems = menuItems.filter(item => {
-    const categoryMatch = activeCategory === 'all' || item.category.slug === activeCategory;
-    const vegMatch = vegFilter === 'all' || 
-      (vegFilter === 'veg' && item.isVeg) || 
-      (vegFilter === 'nonveg' && !item.isVeg);
-    return categoryMatch && vegMatch;
-  });
+  // Memoized filtered menu items for better performance
+  const filteredMenuItems = useMemo(() => {
+    if (!menuItems || menuItems.length === 0) return [];
+    
+    return menuItems.filter(item => {
+      // Safely check category match
+      const itemCategorySlug = item.category?.slug || '';
+      const categoryMatch = activeCategory === 'all' || itemCategorySlug === activeCategory;
+      
+      // Check veg filter
+      const vegMatch = vegFilter === 'all' || 
+        (vegFilter === 'veg' && item.isVeg) || 
+        (vegFilter === 'nonveg' && !item.isVeg);
+      
+      return categoryMatch && vegMatch;
+    });
+  }, [menuItems, activeCategory, vegFilter]);
 
   // Get visible testimonials (max 10)
   const visibleTestimonials = testimonials.slice(0, 10);
@@ -761,15 +771,17 @@ export default function HomePage() {
           </div>
 
           {/* Menu Grid */}
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={stagger}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-          >
-            {filteredMenuItems.map((item) => (
-              <motion.div key={item.id} variants={fadeInUp}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeCategory + vegFilter} // Force re-render on filter change
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              variants={stagger}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+            >
+              {filteredMenuItems.map((item) => (
+                <motion.div key={item.id} variants={fadeInUp}>
                 <Card className="group bg-white hover:shadow-xl transition-all duration-300 overflow-hidden border border-[#D4C8B8]">
                   <div className="relative aspect-[4/3] sm:aspect-video bg-[#E8E4DB]">
                     {item.image ? (
@@ -809,7 +821,8 @@ export default function HomePage() {
                 </Card>
               </motion.div>
             ))}
-          </motion.div>
+            </motion.div>
+          </AnimatePresence>
 
           {/* Order CTA */}
           <div className="text-center mt-8 sm:mt-12 px-2">
